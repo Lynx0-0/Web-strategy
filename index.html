@@ -245,6 +245,204 @@
         .overlay-btn:hover {
             background: #ff6b8a;
         }
+
+        /* Mobile menu toggle button */
+        .sidebar-toggle {
+            display: none;
+            position: fixed;
+            bottom: 60px;
+            right: 10px;
+            width: 50px;
+            height: 50px;
+            background: #e94560;
+            border: none;
+            border-radius: 50%;
+            color: #fff;
+            font-size: 24px;
+            cursor: pointer;
+            z-index: 50;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+
+        .sidebar-toggle:hover {
+            background: #ff6b8a;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1200px) {
+            #sidebar {
+                width: 200px;
+            }
+
+            .resources {
+                gap: 15px;
+            }
+
+            .resource-value {
+                font-size: 16px;
+            }
+        }
+
+        @media (max-width: 900px) {
+            #game-header {
+                flex-direction: column;
+                gap: 10px;
+                padding: 8px 15px;
+            }
+
+            .title {
+                font-size: 20px;
+            }
+
+            .resources {
+                gap: 10px;
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+
+            .resource-item {
+                gap: 5px;
+            }
+
+            .resource-value {
+                font-size: 14px;
+            }
+
+            .resource-label {
+                font-size: 10px;
+            }
+
+            .resource-icon {
+                width: 16px;
+                height: 16px;
+            }
+
+            #sidebar {
+                position: fixed;
+                right: -250px;
+                top: 0;
+                bottom: 0;
+                width: 250px;
+                z-index: 40;
+                transition: right 0.3s ease;
+                padding-top: 10px;
+            }
+
+            #sidebar.open {
+                right: 0;
+            }
+
+            .sidebar-toggle {
+                display: block;
+            }
+
+            #game-footer {
+                flex-direction: column;
+                gap: 5px;
+                padding: 5px 15px;
+            }
+
+            .game-time, .game-status, .selection-info {
+                font-size: 11px;
+            }
+        }
+
+        @media (max-width: 600px) {
+            #game-header {
+                padding: 5px 10px;
+            }
+
+            .title {
+                font-size: 16px;
+            }
+
+            .resources {
+                gap: 8px;
+            }
+
+            .resource-value {
+                font-size: 12px;
+            }
+
+            .resource-label {
+                font-size: 9px;
+            }
+
+            .resource-icon {
+                width: 12px;
+                height: 12px;
+            }
+
+            #minimap {
+                height: 100px;
+            }
+
+            .build-btn {
+                padding: 8px;
+            }
+
+            .build-btn .btn-title {
+                font-size: 12px;
+            }
+
+            .build-btn .btn-cost {
+                font-size: 10px;
+            }
+
+            .build-btn .btn-desc {
+                font-size: 9px;
+            }
+
+            .section-title {
+                font-size: 12px;
+            }
+
+            .controls-info {
+                font-size: 10px;
+            }
+
+            .controls-info kbd {
+                padding: 1px 4px;
+                font-size: 9px;
+            }
+
+            .info-box {
+                font-size: 11px;
+                padding: 8px;
+            }
+
+            .sidebar-toggle {
+                width: 45px;
+                height: 45px;
+                font-size: 20px;
+                bottom: 50px;
+            }
+
+            #game-footer {
+                padding: 4px 10px;
+            }
+
+            .overlay-title {
+                font-size: 36px;
+            }
+
+            .overlay-btn {
+                padding: 12px 30px;
+                font-size: 16px;
+            }
+        }
+
+        @media (max-width: 400px) {
+            .resources {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 5px;
+            }
+
+            .title {
+                font-size: 14px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -333,6 +531,8 @@
         </div>
 
         <div class="tooltip" id="tooltip"></div>
+
+        <button class="sidebar-toggle" id="sidebar-toggle">☰</button>
     </div>
 
     <div id="game-footer">
@@ -650,6 +850,11 @@
             canvas.addEventListener('contextmenu', e => e.preventDefault());
             canvas.addEventListener('wheel', onWheel);
 
+            // Touch events for mobile
+            canvas.addEventListener('touchstart', onTouchStart, { passive: false });
+            canvas.addEventListener('touchmove', onTouchMove, { passive: false });
+            canvas.addEventListener('touchend', onTouchEnd, { passive: false });
+
             // Keyboard events
             document.addEventListener('keydown', onKeyDown);
             document.addEventListener('keyup', onKeyUp);
@@ -657,6 +862,16 @@
             // Build buttons
             document.getElementById('btn-wall').addEventListener('click', () => setBuildMode('wall'));
             document.getElementById('btn-tower').addEventListener('click', () => setBuildMode('tower'));
+
+            // Sidebar toggle for mobile
+            document.getElementById('sidebar-toggle').addEventListener('click', toggleSidebar);
+        }
+
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const toggle = document.getElementById('sidebar-toggle');
+            sidebar.classList.toggle('open');
+            toggle.textContent = sidebar.classList.contains('open') ? '✕' : '☰';
         }
 
         const keys = {};
@@ -763,6 +978,163 @@
 
             game.camera.x += mouseWorld.x - newMouseWorld.x;
             game.camera.y += mouseWorld.y - newMouseWorld.y;
+        }
+
+        // Touch handling variables
+        let touchStartTime = 0;
+        let lastTouchPos = null;
+        let lastPinchDist = 0;
+        let isTouchDragging = false;
+        let touchStartPos = null;
+
+        function getTouchPos(touch) {
+            const rect = game.canvas.getBoundingClientRect();
+            return {
+                x: touch.clientX - rect.left,
+                y: touch.clientY - rect.top
+            };
+        }
+
+        function onTouchStart(e) {
+            e.preventDefault();
+
+            if (e.touches.length === 1) {
+                // Single touch - selection or placement
+                const touch = e.touches[0];
+                const pos = getTouchPos(touch);
+                const worldPos = screenToWorld(pos.x, pos.y);
+
+                touchStartTime = Date.now();
+                touchStartPos = pos;
+                lastTouchPos = pos;
+                mousePos = worldPos;
+
+                if (game.buildMode) {
+                    // Place building on tap
+                    placeBuildingAttempt(worldPos.x, worldPos.y);
+                } else {
+                    // Start selection
+                    isTouchDragging = true;
+                    game.selectionBox = {
+                        x1: worldPos.x,
+                        y1: worldPos.y,
+                        x2: worldPos.x,
+                        y2: worldPos.y
+                    };
+                }
+            } else if (e.touches.length === 2) {
+                // Two finger touch - pinch zoom or pan
+                isTouchDragging = false;
+                game.selectionBox = null;
+
+                const touch1 = getTouchPos(e.touches[0]);
+                const touch2 = getTouchPos(e.touches[1]);
+                lastPinchDist = Math.hypot(touch2.x - touch1.x, touch2.y - touch1.y);
+                lastTouchPos = {
+                    x: (touch1.x + touch2.x) / 2,
+                    y: (touch1.y + touch2.y) / 2
+                };
+            }
+        }
+
+        function onTouchMove(e) {
+            e.preventDefault();
+
+            if (e.touches.length === 1 && isTouchDragging) {
+                // Single touch drag - selection box
+                const touch = e.touches[0];
+                const pos = getTouchPos(touch);
+                const worldPos = screenToWorld(pos.x, pos.y);
+
+                mousePos = worldPos;
+
+                if (game.selectionBox) {
+                    game.selectionBox.x2 = worldPos.x;
+                    game.selectionBox.y2 = worldPos.y;
+                }
+
+                lastTouchPos = pos;
+            } else if (e.touches.length === 2) {
+                // Two finger - pinch zoom and pan
+                const touch1 = getTouchPos(e.touches[0]);
+                const touch2 = getTouchPos(e.touches[1]);
+
+                // Calculate pinch distance
+                const pinchDist = Math.hypot(touch2.x - touch1.x, touch2.y - touch1.y);
+
+                // Calculate center point
+                const center = {
+                    x: (touch1.x + touch2.x) / 2,
+                    y: (touch1.y + touch2.y) / 2
+                };
+
+                // Pinch zoom
+                if (lastPinchDist > 0) {
+                    const zoomFactor = pinchDist / lastPinchDist;
+                    const newZoom = Math.max(0.5, Math.min(2, game.camera.zoom * zoomFactor));
+
+                    const worldCenter = screenToWorld(center.x, center.y);
+                    game.camera.zoom = newZoom;
+                    const newWorldCenter = screenToWorld(center.x, center.y);
+
+                    game.camera.x += worldCenter.x - newWorldCenter.x;
+                    game.camera.y += worldCenter.y - newWorldCenter.y;
+                }
+
+                // Pan
+                if (lastTouchPos) {
+                    const dx = (lastTouchPos.x - center.x) / game.camera.zoom;
+                    const dy = (lastTouchPos.y - center.y) / game.camera.zoom;
+                    game.camera.x += dx;
+                    game.camera.y += dy;
+
+                    // Clamp camera
+                    game.camera.x = Math.max(0, Math.min(CONFIG.MAP_WIDTH - game.canvas.width / game.camera.zoom, game.camera.x));
+                    game.camera.y = Math.max(0, Math.min(CONFIG.MAP_HEIGHT - game.canvas.height / game.camera.zoom, game.camera.y));
+                }
+
+                lastPinchDist = pinchDist;
+                lastTouchPos = center;
+            }
+        }
+
+        function onTouchEnd(e) {
+            e.preventDefault();
+
+            if (e.touches.length === 0) {
+                const touchDuration = Date.now() - touchStartTime;
+
+                if (isTouchDragging && game.selectionBox) {
+                    // Check if it was a tap (short duration, small movement)
+                    const box = game.selectionBox;
+                    const boxWidth = Math.abs(box.x2 - box.x1);
+                    const boxHeight = Math.abs(box.y2 - box.y1);
+
+                    if (touchDuration < 300 && boxWidth < 10 && boxHeight < 10) {
+                        // It was a tap - check for command or selection
+                        if (game.selectedUnits.length > 0 && touchDuration > 150) {
+                            // Long tap with selection = move command
+                            issueCommand(box.x1, box.y1);
+                        } else {
+                            // Quick tap = select
+                            selectUnitsInBox();
+                        }
+                    } else {
+                        // It was a drag - complete selection
+                        selectUnitsInBox();
+                    }
+                }
+
+                isTouchDragging = false;
+                game.selectionBox = null;
+                lastTouchPos = null;
+                lastPinchDist = 0;
+            } else if (e.touches.length === 1) {
+                // Reset to single touch
+                const touch = e.touches[0];
+                lastTouchPos = getTouchPos(touch);
+                lastPinchDist = 0;
+            }
         }
 
         // ============================================
