@@ -1,0 +1,367 @@
+[gd_scene load_steps=9 format=3 uid="uid://b8xqk3lvjy8qd"]
+
+[ext_resource type="Script" path="res://scripts/game_manager.gd" id="1_game_manager"]
+[ext_resource type="Script" path="res://scripts/camera_controller.gd" id="2_camera"]
+[ext_resource type="Script" path="res://scripts/game_renderer.gd" id="3_renderer"]
+[ext_resource type="Script" path="res://scripts/hud.gd" id="4_hud"]
+[ext_resource type="Script" path="res://scripts/minimap.gd" id="5_minimap"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
+bg_color = Color(0.0862745, 0.129412, 0.243137, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.0588235, 0.203922, 0.376471, 1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_button"]
+bg_color = Color(0.0588235, 0.203922, 0.376471, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.101961, 0.290196, 0.478431, 1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_button_hover"]
+bg_color = Color(0.101961, 0.290196, 0.478431, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.913725, 0.270588, 0.376471, 1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[node name="Main" type="Node2D"]
+script = ExtResource("1_game_manager")
+
+[node name="Background" type="ColorRect" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_right = 2000.0
+offset_bottom = 1500.0
+color = Color(0.0392157, 0.0392157, 0.0823529, 1)
+
+[node name="GameRenderer" type="Node2D" parent="."]
+script = ExtResource("3_renderer")
+
+[node name="Territories" type="Node2D" parent="."]
+
+[node name="Buildings" type="Node2D" parent="."]
+
+[node name="Units" type="Node2D" parent="."]
+
+[node name="SelectionBox" type="Node2D" parent="."]
+
+[node name="BuildPreview" type="Node2D" parent="."]
+
+[node name="Camera2D" type="Camera2D" parent="."]
+position = Vector2(300, 750)
+script = ExtResource("2_camera")
+pan_speed = 500.0
+zoom_speed = 0.1
+min_zoom = 0.5
+max_zoom = 2.0
+
+[node name="HUD" type="CanvasLayer" parent="."]
+script = ExtResource("4_hud")
+
+[node name="TopBar" type="PanelContainer" parent="HUD"]
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 60.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+
+[node name="MarginContainer" type="MarginContainer" parent="HUD/TopBar"]
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 10
+
+[node name="HBoxContainer" type="HBoxContainer" parent="HUD/TopBar/MarginContainer"]
+layout_mode = 2
+theme_override_constants/separation = 30
+
+[node name="Title" type="Label" parent="HUD/TopBar/MarginContainer/HBoxContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.913725, 0.270588, 0.376471, 1)
+theme_override_font_sizes/font_size = 24
+text = "⚔️ RTS Pixel Wars"
+
+[node name="Resources" type="HBoxContainer" parent="HUD/TopBar/MarginContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 10
+theme_override_constants/separation = 30
+
+[node name="Pixel" type="HBoxContainer" parent="HUD/TopBar/MarginContainer/HBoxContainer/Resources"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Icon" type="ColorRect" parent="HUD/TopBar/MarginContainer/HBoxContainer/Resources/Pixel"]
+custom_minimum_size = Vector2(20, 20)
+layout_mode = 2
+color = Color(0.290196, 0.870588, 0.501961, 1)
+
+[node name="VBox" type="VBoxContainer" parent="HUD/TopBar/MarginContainer/HBoxContainer/Resources/Pixel"]
+layout_mode = 2
+
+[node name="PixelCount" type="Label" parent="HUD/TopBar/MarginContainer/HBoxContainer/Resources/Pixel/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "500"
+
+[node name="PixelLabel" type="Label" parent="HUD/TopBar/MarginContainer/HBoxContainer/Resources/Pixel/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.533333, 0.533333, 0.533333, 1)
+theme_override_font_sizes/font_size = 12
+text = "Pixel"
+
+[node name="Territory" type="HBoxContainer" parent="HUD/TopBar/MarginContainer/HBoxContainer/Resources"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Icon" type="ColorRect" parent="HUD/TopBar/MarginContainer/HBoxContainer/Resources/Territory"]
+custom_minimum_size = Vector2(20, 20)
+layout_mode = 2
+color = Color(0.376471, 0.647059, 0.980392, 1)
+
+[node name="VBox" type="VBoxContainer" parent="HUD/TopBar/MarginContainer/HBoxContainer/Resources/Territory"]
+layout_mode = 2
+
+[node name="TerritoryCount" type="Label" parent="HUD/TopBar/MarginContainer/HBoxContainer/Resources/Territory/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "0"
+
+[node name="TerritoryLabel" type="Label" parent="HUD/TopBar/MarginContainer/HBoxContainer/Resources/Territory/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.533333, 0.533333, 0.533333, 1)
+theme_override_font_sizes/font_size = 12
+text = "Territorio"
+
+[node name="Units" type="HBoxContainer" parent="HUD/TopBar/MarginContainer/HBoxContainer/Resources"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Icon" type="ColorRect" parent="HUD/TopBar/MarginContainer/HBoxContainer/Resources/Units"]
+custom_minimum_size = Vector2(20, 20)
+layout_mode = 2
+color = Color(0.984314, 0.74902, 0.141176, 1)
+
+[node name="VBox" type="VBoxContainer" parent="HUD/TopBar/MarginContainer/HBoxContainer/Resources/Units"]
+layout_mode = 2
+
+[node name="UnitCount" type="Label" parent="HUD/TopBar/MarginContainer/HBoxContainer/Resources/Units/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "0"
+
+[node name="UnitLabel" type="Label" parent="HUD/TopBar/MarginContainer/HBoxContainer/Resources/Units/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.533333, 0.533333, 0.533333, 1)
+theme_override_font_sizes/font_size = 12
+text = "Unità"
+
+[node name="PopCap" type="HBoxContainer" parent="HUD/TopBar/MarginContainer/HBoxContainer/Resources"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Icon" type="ColorRect" parent="HUD/TopBar/MarginContainer/HBoxContainer/Resources/PopCap"]
+custom_minimum_size = Vector2(20, 20)
+layout_mode = 2
+color = Color(0.654902, 0.545098, 0.980392, 1)
+
+[node name="VBox" type="VBoxContainer" parent="HUD/TopBar/MarginContainer/HBoxContainer/Resources/PopCap"]
+layout_mode = 2
+
+[node name="PopCapCount" type="Label" parent="HUD/TopBar/MarginContainer/HBoxContainer/Resources/PopCap/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "1000"
+
+[node name="PopCapLabel" type="Label" parent="HUD/TopBar/MarginContainer/HBoxContainer/Resources/PopCap/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.533333, 0.533333, 0.533333, 1)
+theme_override_font_sizes/font_size = 12
+text = "Pop. Max"
+
+[node name="Sidebar" type="PanelContainer" parent="HUD"]
+anchors_preset = 11
+anchor_left = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -250.0
+offset_top = 60.0
+offset_bottom = -40.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+
+[node name="MarginContainer" type="MarginContainer" parent="HUD/Sidebar"]
+layout_mode = 2
+theme_override_constants/margin_left = 15
+theme_override_constants/margin_top = 15
+theme_override_constants/margin_right = 15
+theme_override_constants/margin_bottom = 15
+
+[node name="VBoxContainer" type="VBoxContainer" parent="HUD/Sidebar/MarginContainer"]
+layout_mode = 2
+theme_override_constants/separation = 15
+
+[node name="Minimap" type="Control" parent="HUD/Sidebar/MarginContainer/VBoxContainer"]
+custom_minimum_size = Vector2(0, 150)
+layout_mode = 2
+script = ExtResource("5_minimap")
+
+[node name="BuildLabel" type="Label" parent="HUD/Sidebar/MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.913725, 0.270588, 0.376471, 1)
+theme_override_font_sizes/font_size = 14
+text = "COSTRUZIONI"
+
+[node name="BuildButtons" type="VBoxContainer" parent="HUD/Sidebar/MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="WallButton" type="Button" parent="HUD/Sidebar/MarginContainer/VBoxContainer/BuildButtons"]
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_button")
+theme_override_styles/hover = SubResource("StyleBoxFlat_button_hover")
+text = "🧱 Muro - 10 pixel"
+
+[node name="TowerButton" type="Button" parent="HUD/Sidebar/MarginContainer/VBoxContainer/BuildButtons"]
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_button")
+theme_override_styles/hover = SubResource("StyleBoxFlat_button_hover")
+text = "🗼 Torre - 50 pixel"
+
+[node name="SelectionLabel" type="Label" parent="HUD/Sidebar/MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.913725, 0.270588, 0.376471, 1)
+theme_override_font_sizes/font_size = 14
+text = "SELEZIONE"
+
+[node name="SelectionInfo" type="RichTextLabel" parent="HUD/Sidebar/MarginContainer/VBoxContainer"]
+custom_minimum_size = Vector2(0, 80)
+layout_mode = 2
+bbcode_enabled = true
+text = "Nessuna selezione.
+Trascina per selezionare unità."
+
+[node name="ControlsLabel" type="Label" parent="HUD/Sidebar/MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.913725, 0.270588, 0.376471, 1)
+theme_override_font_sizes/font_size = 14
+text = "CONTROLLI"
+
+[node name="ControlsInfo" type="Label" parent="HUD/Sidebar/MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.533333, 0.533333, 0.533333, 1)
+theme_override_font_sizes/font_size = 11
+text = "Click sinistro: Seleziona
+Click destro: Muovi/Attacca
+CTRL+A: Seleziona tutte
+WASD: Muovi camera
+Rotella: Zoom
+Q: Costruisci muro
+E: Costruisci torre
+ESC: Annulla"
+
+[node name="BottomBar" type="PanelContainer" parent="HUD"]
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -40.0
+offset_right = -250.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+
+[node name="MarginContainer" type="MarginContainer" parent="HUD/BottomBar"]
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 8
+
+[node name="HBoxContainer" type="HBoxContainer" parent="HUD/BottomBar/MarginContainer"]
+layout_mode = 2
+
+[node name="TimeLabel" type="Label" parent="HUD/BottomBar/MarginContainer/HBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "Tempo: 00:00"
+
+[node name="Spacer" type="Control" parent="HUD/BottomBar/MarginContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="StatusLabel" type="Label" parent="HUD/BottomBar/MarginContainer/HBoxContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.290196, 0.870588, 0.501961, 1)
+theme_override_font_sizes/font_size = 12
+text = "In gioco"
+
+[node name="Spacer2" type="Control" parent="HUD/BottomBar/MarginContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="SelectionLabel" type="Label" parent="HUD/BottomBar/MarginContainer/HBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "Selezionate: 0 unità"
+
+[node name="GameOverlay" type="Control" parent="HUD"]
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Background" type="ColorRect" parent="HUD/GameOverlay"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.8)
+
+[node name="VBoxContainer" type="VBoxContainer" parent="HUD/GameOverlay"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -150.0
+offset_top = -80.0
+offset_right = 150.0
+offset_bottom = 80.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 20
+alignment = 1
+
+[node name="OverlayTitle" type="Label" parent="HUD/GameOverlay/VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 48
+text = "VITTORIA!"
+horizontal_alignment = 1
+
+[node name="RestartButton" type="Button" parent="HUD/GameOverlay/VBoxContainer"]
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_button")
+theme_override_styles/hover = SubResource("StyleBoxFlat_button_hover")
+text = "Nuova Partita"
