@@ -1,0 +1,10 @@
+[gd_scene load_steps=2 format=3 uid="uid://cxw8k2nvph6yx"]
+
+[ext_resource type="Script" path="res://scripts/tower.gd" id="1_tower"]
+
+[node name="Tower" type="StaticBody2D"]
+collision_layer = 4
+collision_mask = 4
+script = ExtResource("1_tower")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
