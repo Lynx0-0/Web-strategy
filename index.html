@@ -1,0 +1,1693 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RTS Pixel Wars</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #1a1a2e;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        #game-header {
+            background: #16213e;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #0f3460;
+        }
+
+        .title {
+            color: #e94560;
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .resources {
+            display: flex;
+            gap: 30px;
+        }
+
+        .resource-item {
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .resource-icon {
+            width: 20px;
+            height: 20px;
+            border-radius: 3px;
+        }
+
+        .resource-value {
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        .resource-label {
+            font-size: 12px;
+            color: #888;
+        }
+
+        #game-container {
+            flex: 1;
+            display: flex;
+            position: relative;
+        }
+
+        #game-canvas {
+            flex: 1;
+            background: #0a0a15;
+        }
+
+        #sidebar {
+            width: 250px;
+            background: #16213e;
+            padding: 15px;
+            border-left: 2px solid #0f3460;
+            overflow-y: auto;
+        }
+
+        .sidebar-section {
+            margin-bottom: 20px;
+        }
+
+        .section-title {
+            color: #e94560;
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+
+        .build-btn {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 8px;
+            background: #0f3460;
+            border: 2px solid #1a4a7a;
+            color: #fff;
+            cursor: pointer;
+            border-radius: 5px;
+            text-align: left;
+            transition: all 0.2s;
+        }
+
+        .build-btn:hover {
+            background: #1a4a7a;
+            border-color: #e94560;
+        }
+
+        .build-btn.active {
+            background: #e94560;
+            border-color: #ff6b8a;
+        }
+
+        .build-btn .btn-title {
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .build-btn .btn-cost {
+            font-size: 11px;
+            color: #ffd700;
+            margin-top: 3px;
+        }
+
+        .build-btn .btn-desc {
+            font-size: 10px;
+            color: #888;
+            margin-top: 3px;
+        }
+
+        .info-box {
+            background: #0f3460;
+            padding: 10px;
+            border-radius: 5px;
+            color: #fff;
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        .info-box strong {
+            color: #e94560;
+        }
+
+        #minimap {
+            width: 100%;
+            height: 150px;
+            background: #0a0a15;
+            border: 2px solid #0f3460;
+            border-radius: 5px;
+            margin-bottom: 15px;
+        }
+
+        .controls-info {
+            color: #888;
+            font-size: 11px;
+            line-height: 1.6;
+        }
+
+        .controls-info kbd {
+            background: #0f3460;
+            padding: 2px 6px;
+            border-radius: 3px;
+            color: #fff;
+        }
+
+        #game-footer {
+            background: #16213e;
+            padding: 8px 20px;
+            border-top: 2px solid #0f3460;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .game-time {
+            color: #fff;
+            font-size: 14px;
+        }
+
+        .game-status {
+            color: #4ade80;
+            font-size: 12px;
+        }
+
+        .selection-info {
+            color: #fff;
+            font-size: 12px;
+        }
+
+        /* Tooltip */
+        .tooltip {
+            position: absolute;
+            background: rgba(22, 33, 62, 0.95);
+            border: 1px solid #e94560;
+            padding: 8px 12px;
+            border-radius: 5px;
+            color: #fff;
+            font-size: 12px;
+            pointer-events: none;
+            z-index: 1000;
+            display: none;
+        }
+
+        /* Victory/Defeat overlay */
+        #game-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            z-index: 100;
+        }
+
+        .overlay-title {
+            font-size: 48px;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+
+        .victory { color: #4ade80; }
+        .defeat { color: #e94560; }
+
+        .overlay-btn {
+            padding: 15px 40px;
+            font-size: 18px;
+            background: #e94560;
+            border: none;
+            color: #fff;
+            cursor: pointer;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+
+        .overlay-btn:hover {
+            background: #ff6b8a;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-header">
+        <div class="title">⚔️ RTS Pixel Wars</div>
+        <div class="resources">
+            <div class="resource-item">
+                <div class="resource-icon" style="background: #4ade80;"></div>
+                <div>
+                    <div class="resource-value" id="pixel-count">500</div>
+                    <div class="resource-label">Pixel</div>
+                </div>
+            </div>
+            <div class="resource-item">
+                <div class="resource-icon" style="background: #60a5fa;"></div>
+                <div>
+                    <div class="resource-value" id="territory-count">0</div>
+                    <div class="resource-label">Territorio</div>
+                </div>
+            </div>
+            <div class="resource-item">
+                <div class="resource-icon" style="background: #fbbf24;"></div>
+                <div>
+                    <div class="resource-value" id="unit-count">0</div>
+                    <div class="resource-label">Unità</div>
+                </div>
+            </div>
+            <div class="resource-item">
+                <div class="resource-icon" style="background: #a78bfa;"></div>
+                <div>
+                    <div class="resource-value" id="pop-cap">1000</div>
+                    <div class="resource-label">Pop. Max</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="game-container">
+        <canvas id="game-canvas"></canvas>
+
+        <div id="sidebar">
+            <canvas id="minimap"></canvas>
+
+            <div class="sidebar-section">
+                <div class="section-title">Costruzioni</div>
+                <button class="build-btn" id="btn-wall">
+                    <div class="btn-title">🧱 Muro</div>
+                    <div class="btn-cost">Costo: 10 pixel</div>
+                    <div class="btn-desc">5x salute, blocca movimento</div>
+                </button>
+                <button class="build-btn" id="btn-tower">
+                    <div class="btn-title">🗼 Torre</div>
+                    <div class="btn-cost">Costo: 50 pixel</div>
+                    <div class="btn-desc">Genera unità, aura difesa</div>
+                </button>
+            </div>
+
+            <div class="sidebar-section">
+                <div class="section-title">Selezione</div>
+                <div class="info-box" id="selection-info">
+                    Nessuna selezione.<br>
+                    Trascina per selezionare unità.
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <div class="section-title">Controlli</div>
+                <div class="controls-info">
+                    <kbd>Click sinistro</kbd> Seleziona<br>
+                    <kbd>Click destro</kbd> Muovi/Attacca<br>
+                    <kbd>Trascina</kbd> Selezione box<br>
+                    <kbd>CTRL+A</kbd> Seleziona tutte<br>
+                    <kbd>1-9</kbd> Gruppi rapidi<br>
+                    <kbd>CTRL+1-9</kbd> Assegna gruppo<br>
+                    <kbd>WASD/Frecce</kbd> Muovi camera<br>
+                    <kbd>Rotella</kbd> Zoom<br>
+                    <kbd>ESC</kbd> Annulla
+                </div>
+            </div>
+        </div>
+
+        <div id="game-overlay">
+            <div class="overlay-title" id="overlay-title">VITTORIA!</div>
+            <div class="overlay-stats" id="overlay-stats"></div>
+            <button class="overlay-btn" onclick="restartGame()">Nuova Partita</button>
+        </div>
+
+        <div class="tooltip" id="tooltip"></div>
+    </div>
+
+    <div id="game-footer">
+        <div class="game-time">Tempo: <span id="game-time">00:00</span></div>
+        <div class="game-status" id="game-status">In gioco</div>
+        <div class="selection-info" id="footer-selection">Selezionate: 0 unità</div>
+    </div>
+
+    <script>
+        // ============================================
+        // RTS PIXEL WARS - Complete Game Implementation
+        // ============================================
+
+        // Game Configuration
+        const CONFIG = {
+            // Map
+            MAP_WIDTH: 2000,
+            MAP_HEIGHT: 1500,
+            GRID_SIZE: 50,
+
+            // Units
+            UNIT_SIZE: 3,
+            ATTACK_RANGE: 15,
+            ATTACK_DAMAGE: 1.0,
+            MOVE_SPEED: 50,
+
+            // Buildings
+            WALL: {
+                health: 5,
+                cost: 10,
+                buildTime: 2000,
+                size: 4
+            },
+            TOWER: {
+                health: 20,
+                cost: 50,
+                buildTime: 5000,
+                range: 150,
+                damage: 0.5,
+                size: 12,
+                unitGenRate: 3000,
+                maxStored: 50,
+                spawnRadius: 30,
+                auraRange: 50,
+                auraBonus: 0.5
+            },
+
+            // Economy
+            STARTING_PIXELS: 500,
+            INCOME_PER_TERRITORY: 1,
+            INCOME_INTERVAL: 5000,
+            BASE_POP_CAP: 1000,
+            POP_PER_TOWER: 100,
+
+            // Territory
+            TERRITORY_SIZE: 25,
+
+            // Spatial Hash
+            CELL_SIZE: 50,
+
+            // AI
+            AI_UPDATE_INTERVAL: 2000,
+
+            // Bonuses
+            WALL_DEFENSE_BONUS: 0.3,
+            TOWER_DEFENSE_BONUS: 0.5
+        };
+
+        // Game State
+        const game = {
+            canvas: null,
+            ctx: null,
+            minimap: null,
+            minimapCtx: null,
+
+            camera: { x: 0, y: 0, zoom: 1 },
+
+            units: [],
+            buildings: [],
+            territories: [],
+
+            players: {
+                1: {
+                    id: 1,
+                    color: '#4ade80',
+                    pixels: CONFIG.STARTING_PIXELS,
+                    isAI: false
+                },
+                2: {
+                    id: 2,
+                    color: '#ef4444',
+                    pixels: CONFIG.STARTING_PIXELS,
+                    isAI: true
+                }
+            },
+
+            selectedUnits: [],
+            selectionBox: null,
+            buildMode: null,
+
+            controlGroups: {},
+
+            spatialHash: null,
+
+            time: 0,
+            lastUpdate: 0,
+            isPaused: false,
+            isGameOver: false,
+
+            nextUnitId: 1,
+            nextBuildingId: 1
+        };
+
+        // ============================================
+        // Spatial Hash for efficient collision detection
+        // ============================================
+        class SpatialHash {
+            constructor(cellSize) {
+                this.cellSize = cellSize;
+                this.cells = new Map();
+            }
+
+            clear() {
+                this.cells.clear();
+            }
+
+            getKey(x, y) {
+                const cx = Math.floor(x / this.cellSize);
+                const cy = Math.floor(y / this.cellSize);
+                return `${cx},${cy}`;
+            }
+
+            insert(entity) {
+                const key = this.getKey(entity.x, entity.y);
+                if (!this.cells.has(key)) {
+                    this.cells.set(key, []);
+                }
+                this.cells.get(key).push(entity);
+            }
+
+            query(x, y, range) {
+                const results = [];
+                const minCx = Math.floor((x - range) / this.cellSize);
+                const maxCx = Math.floor((x + range) / this.cellSize);
+                const minCy = Math.floor((y - range) / this.cellSize);
+                const maxCy = Math.floor((y + range) / this.cellSize);
+
+                for (let cx = minCx; cx <= maxCx; cx++) {
+                    for (let cy = minCy; cy <= maxCy; cy++) {
+                        const key = `${cx},${cy}`;
+                        const cell = this.cells.get(key);
+                        if (cell) {
+                            for (const entity of cell) {
+                                const dx = entity.x - x;
+                                const dy = entity.y - y;
+                                if (dx * dx + dy * dy <= range * range) {
+                                    results.push(entity);
+                                }
+                            }
+                        }
+                    }
+                }
+                return results;
+            }
+        }
+
+        // ============================================
+        // Initialization
+        // ============================================
+        function init() {
+            // Setup canvas
+            game.canvas = document.getElementById('game-canvas');
+            game.ctx = game.canvas.getContext('2d');
+
+            game.minimap = document.getElementById('minimap');
+            game.minimapCtx = game.minimap.getContext('2d');
+
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+
+            // Initialize spatial hash
+            game.spatialHash = new SpatialHash(CONFIG.CELL_SIZE);
+
+            // Initialize territories
+            initTerritories();
+
+            // Spawn starting units
+            spawnStartingUnits();
+
+            // Setup event listeners
+            setupEventListeners();
+
+            // Start game loop
+            game.lastUpdate = performance.now();
+            requestAnimationFrame(gameLoop);
+        }
+
+        function resizeCanvas() {
+            game.canvas.width = game.canvas.clientWidth;
+            game.canvas.height = game.canvas.clientHeight;
+
+            game.minimap.width = game.minimap.clientWidth;
+            game.minimap.height = game.minimap.clientHeight;
+
+            // Center camera on player base
+            game.camera.x = CONFIG.MAP_WIDTH / 4 - game.canvas.width / 2;
+            game.camera.y = CONFIG.MAP_HEIGHT / 2 - game.canvas.height / 2;
+        }
+
+        function initTerritories() {
+            const cols = Math.ceil(CONFIG.MAP_WIDTH / CONFIG.TERRITORY_SIZE);
+            const rows = Math.ceil(CONFIG.MAP_HEIGHT / CONFIG.TERRITORY_SIZE);
+
+            for (let y = 0; y < rows; y++) {
+                for (let x = 0; x < cols; x++) {
+                    game.territories.push({
+                        x: x * CONFIG.TERRITORY_SIZE,
+                        y: y * CONFIG.TERRITORY_SIZE,
+                        owner: 0 // neutral
+                    });
+                }
+            }
+        }
+
+        function spawnStartingUnits() {
+            // Player 1 base (left side)
+            const p1BaseX = CONFIG.MAP_WIDTH * 0.15;
+            const p1BaseY = CONFIG.MAP_HEIGHT * 0.5;
+
+            // Player 2 base (right side)
+            const p2BaseX = CONFIG.MAP_WIDTH * 0.85;
+            const p2BaseY = CONFIG.MAP_HEIGHT * 0.5;
+
+            // Spawn initial tower for each player
+            createBuilding(p1BaseX, p1BaseY, 'tower', 1);
+            createBuilding(p2BaseX, p2BaseY, 'tower', 2);
+
+            // Spawn starting units
+            for (let i = 0; i < 100; i++) {
+                const angle = (i / 100) * Math.PI * 2;
+                const radius = 40 + Math.random() * 30;
+
+                createUnit(
+                    p1BaseX + Math.cos(angle) * radius,
+                    p1BaseY + Math.sin(angle) * radius,
+                    1
+                );
+
+                createUnit(
+                    p2BaseX + Math.cos(angle) * radius,
+                    p2BaseY + Math.sin(angle) * radius,
+                    2
+                );
+            }
+        }
+
+        // ============================================
+        // Entity Creation
+        // ============================================
+        function createUnit(x, y, owner) {
+            const unit = {
+                id: game.nextUnitId++,
+                x: x,
+                y: y,
+                owner: owner,
+                health: 1,
+                maxHealth: 1,
+                type: 'soldier',
+                groupId: null,
+                state: 'idle',
+                target: null,
+                targetPos: null,
+                attackCooldown: 0
+            };
+            game.units.push(unit);
+            return unit;
+        }
+
+        function createBuilding(x, y, type, owner) {
+            const config = type === 'tower' ? CONFIG.TOWER : CONFIG.WALL;
+            const building = {
+                id: game.nextBuildingId++,
+                x: x,
+                y: y,
+                owner: owner,
+                health: config.health,
+                maxHealth: config.health,
+                type: type,
+                size: config.size,
+                buildProgress: 0,
+                isComplete: true,
+                storedUnits: 0,
+                lastSpawn: 0
+            };
+            game.buildings.push(building);
+
+            // Update pop cap if tower
+            if (type === 'tower') {
+                updatePopCap();
+            }
+
+            return building;
+        }
+
+        // ============================================
+        // Event Handling
+        // ============================================
+        function setupEventListeners() {
+            const canvas = game.canvas;
+
+            // Mouse events
+            canvas.addEventListener('mousedown', onMouseDown);
+            canvas.addEventListener('mousemove', onMouseMove);
+            canvas.addEventListener('mouseup', onMouseUp);
+            canvas.addEventListener('contextmenu', e => e.preventDefault());
+            canvas.addEventListener('wheel', onWheel);
+
+            // Keyboard events
+            document.addEventListener('keydown', onKeyDown);
+            document.addEventListener('keyup', onKeyUp);
+
+            // Build buttons
+            document.getElementById('btn-wall').addEventListener('click', () => setBuildMode('wall'));
+            document.getElementById('btn-tower').addEventListener('click', () => setBuildMode('tower'));
+        }
+
+        const keys = {};
+
+        function onKeyDown(e) {
+            keys[e.key.toLowerCase()] = true;
+
+            // Ctrl + A: Select all
+            if (e.ctrlKey && e.key.toLowerCase() === 'a') {
+                e.preventDefault();
+                game.selectedUnits = game.units.filter(u => u.owner === 1);
+                updateSelectionInfo();
+            }
+
+            // Control groups
+            if (e.key >= '1' && e.key <= '9') {
+                const groupNum = e.key;
+                if (e.ctrlKey) {
+                    // Assign control group
+                    game.controlGroups[groupNum] = [...game.selectedUnits];
+                } else {
+                    // Select control group
+                    if (game.controlGroups[groupNum]) {
+                        game.selectedUnits = game.controlGroups[groupNum].filter(u => u.health > 0);
+                        updateSelectionInfo();
+                    }
+                }
+            }
+
+            // ESC: Cancel build mode / deselect
+            if (e.key === 'Escape') {
+                if (game.buildMode) {
+                    setBuildMode(null);
+                } else {
+                    game.selectedUnits = [];
+                    updateSelectionInfo();
+                }
+            }
+        }
+
+        function onKeyUp(e) {
+            keys[e.key.toLowerCase()] = false;
+        }
+
+        let mousePos = { x: 0, y: 0 };
+        let isDragging = false;
+        let dragStart = null;
+
+        function onMouseDown(e) {
+            const worldPos = screenToWorld(e.offsetX, e.offsetY);
+            mousePos = worldPos;
+
+            if (e.button === 0) { // Left click
+                if (game.buildMode) {
+                    // Place building
+                    placeBuildingAttempt(worldPos.x, worldPos.y);
+                } else {
+                    // Start selection
+                    isDragging = true;
+                    dragStart = { x: e.offsetX, y: e.offsetY };
+                    game.selectionBox = {
+                        x1: worldPos.x,
+                        y1: worldPos.y,
+                        x2: worldPos.x,
+                        y2: worldPos.y
+                    };
+                }
+            } else if (e.button === 2) { // Right click
+                if (game.selectedUnits.length > 0) {
+                    issueCommand(worldPos.x, worldPos.y);
+                }
+            }
+        }
+
+        function onMouseMove(e) {
+            const worldPos = screenToWorld(e.offsetX, e.offsetY);
+            mousePos = worldPos;
+
+            if (isDragging && game.selectionBox) {
+                game.selectionBox.x2 = worldPos.x;
+                game.selectionBox.y2 = worldPos.y;
+            }
+        }
+
+        function onMouseUp(e) {
+            if (e.button === 0 && isDragging) {
+                // Complete selection
+                if (game.selectionBox) {
+                    selectUnitsInBox();
+                }
+                isDragging = false;
+                game.selectionBox = null;
+            }
+        }
+
+        function onWheel(e) {
+            const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
+            const newZoom = Math.max(0.5, Math.min(2, game.camera.zoom * zoomFactor));
+
+            // Zoom towards mouse position
+            const mouseWorld = screenToWorld(e.offsetX, e.offsetY);
+            game.camera.zoom = newZoom;
+            const newMouseWorld = screenToWorld(e.offsetX, e.offsetY);
+
+            game.camera.x += mouseWorld.x - newMouseWorld.x;
+            game.camera.y += mouseWorld.y - newMouseWorld.y;
+        }
+
+        // ============================================
+        // Coordinate Conversion
+        // ============================================
+        function screenToWorld(screenX, screenY) {
+            return {
+                x: screenX / game.camera.zoom + game.camera.x,
+                y: screenY / game.camera.zoom + game.camera.y
+            };
+        }
+
+        function worldToScreen(worldX, worldY) {
+            return {
+                x: (worldX - game.camera.x) * game.camera.zoom,
+                y: (worldY - game.camera.y) * game.camera.zoom
+            };
+        }
+
+        // ============================================
+        // Selection & Commands
+        // ============================================
+        function selectUnitsInBox() {
+            const box = game.selectionBox;
+            const minX = Math.min(box.x1, box.x2);
+            const maxX = Math.max(box.x1, box.x2);
+            const minY = Math.min(box.y1, box.y2);
+            const maxY = Math.max(box.y1, box.y2);
+
+            // If it's a small box (click), select single unit
+            if (maxX - minX < 5 && maxY - minY < 5) {
+                const clicked = game.units.find(u =>
+                    u.owner === 1 &&
+                    Math.abs(u.x - box.x1) < 10 &&
+                    Math.abs(u.y - box.y1) < 10
+                );
+                game.selectedUnits = clicked ? [clicked] : [];
+            } else {
+                // Box selection
+                game.selectedUnits = game.units.filter(u =>
+                    u.owner === 1 &&
+                    u.x >= minX && u.x <= maxX &&
+                    u.y >= minY && u.y <= maxY
+                );
+            }
+
+            updateSelectionInfo();
+        }
+
+        function issueCommand(x, y) {
+            // Check if clicking on enemy
+            const enemyUnit = game.units.find(u =>
+                u.owner !== 1 &&
+                Math.hypot(u.x - x, u.y - y) < 15
+            );
+
+            const enemyBuilding = game.buildings.find(b =>
+                b.owner !== 1 &&
+                Math.hypot(b.x - x, b.y - y) < b.size + 10
+            );
+
+            if (enemyUnit || enemyBuilding) {
+                // Attack command
+                for (const unit of game.selectedUnits) {
+                    unit.target = enemyUnit || enemyBuilding;
+                    unit.state = 'attacking';
+                    unit.targetPos = null;
+                }
+            } else {
+                // Move command - formation movement
+                const count = game.selectedUnits.length;
+                const cols = Math.ceil(Math.sqrt(count));
+                const spacing = 8;
+
+                game.selectedUnits.forEach((unit, i) => {
+                    const col = i % cols;
+                    const row = Math.floor(i / cols);
+                    unit.targetPos = {
+                        x: x + (col - cols / 2) * spacing,
+                        y: y + (row - count / cols / 2) * spacing
+                    };
+                    unit.state = 'moving';
+                    unit.target = null;
+                });
+            }
+        }
+
+        function updateSelectionInfo() {
+            const count = game.selectedUnits.length;
+            document.getElementById('footer-selection').textContent = `Selezionate: ${count} unità`;
+
+            const infoBox = document.getElementById('selection-info');
+            if (count === 0) {
+                infoBox.innerHTML = 'Nessuna selezione.<br>Trascina per selezionare unità.';
+            } else {
+                const avgHealth = game.selectedUnits.reduce((sum, u) => sum + u.health, 0) / count;
+                infoBox.innerHTML = `
+                    <strong>${count}</strong> unità selezionate<br>
+                    Salute media: ${(avgHealth * 100).toFixed(0)}%<br>
+                    Click destro per comandare.
+                `;
+            }
+        }
+
+        // ============================================
+        // Building System
+        // ============================================
+        function setBuildMode(type) {
+            game.buildMode = type;
+
+            // Update UI
+            document.querySelectorAll('.build-btn').forEach(btn => btn.classList.remove('active'));
+            if (type === 'wall') {
+                document.getElementById('btn-wall').classList.add('active');
+            } else if (type === 'tower') {
+                document.getElementById('btn-tower').classList.add('active');
+            }
+        }
+
+        function placeBuildingAttempt(x, y) {
+            const type = game.buildMode;
+            const config = type === 'tower' ? CONFIG.TOWER : CONFIG.WALL;
+            const player = game.players[1];
+
+            // Check cost
+            if (player.pixels < config.cost) {
+                showMessage('Pixel insufficienti!');
+                return;
+            }
+
+            // Check placement validity
+            const canPlace = !game.buildings.some(b =>
+                Math.hypot(b.x - x, b.y - y) < b.size + config.size
+            );
+
+            if (!canPlace) {
+                showMessage('Posizione non valida!');
+                return;
+            }
+
+            // Deduct cost and place
+            player.pixels -= config.cost;
+            createBuilding(x, y, type, 1);
+            updateResourceDisplay();
+
+            // Exit build mode after placing
+            setBuildMode(null);
+        }
+
+        function showMessage(text) {
+            // Simple message display
+            const status = document.getElementById('game-status');
+            status.textContent = text;
+            status.style.color = '#ef4444';
+            setTimeout(() => {
+                status.textContent = 'In gioco';
+                status.style.color = '#4ade80';
+            }, 2000);
+        }
+
+        // ============================================
+        // Game Loop
+        // ============================================
+        function gameLoop(timestamp) {
+            const deltaTime = (timestamp - game.lastUpdate) / 1000;
+            game.lastUpdate = timestamp;
+            game.time += deltaTime;
+
+            if (!game.isPaused && !game.isGameOver) {
+                // 1. Handle camera movement
+                handleCameraMovement(deltaTime);
+
+                // 2. Update spatial hash
+                updateSpatialHash();
+
+                // 3. Update AI
+                updateAI(deltaTime);
+
+                // 4. Update unit movement
+                updateUnitMovement(deltaTime);
+
+                // 5. Resolve combat
+                resolveCombat(deltaTime);
+
+                // 6. Update buildings
+                updateBuildings(deltaTime);
+
+                // 7. Update territory
+                updateTerritoryOwnership();
+
+                // 8. Update economy
+                updateEconomy(deltaTime);
+
+                // 9. Check win condition
+                checkWinCondition();
+            }
+
+            // 10. Render
+            render();
+            renderMinimap();
+
+            // 11. Update UI
+            updateUI();
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        function handleCameraMovement(deltaTime) {
+            const speed = 500 * deltaTime;
+
+            if (keys['w'] || keys['arrowup']) game.camera.y -= speed;
+            if (keys['s'] || keys['arrowdown']) game.camera.y += speed;
+            if (keys['a'] || keys['arrowleft']) game.camera.x -= speed;
+            if (keys['d'] || keys['arrowright']) game.camera.x += speed;
+
+            // Clamp camera
+            game.camera.x = Math.max(0, Math.min(CONFIG.MAP_WIDTH - game.canvas.width / game.camera.zoom, game.camera.x));
+            game.camera.y = Math.max(0, Math.min(CONFIG.MAP_HEIGHT - game.canvas.height / game.camera.zoom, game.camera.y));
+        }
+
+        function updateSpatialHash() {
+            game.spatialHash.clear();
+            for (const unit of game.units) {
+                game.spatialHash.insert(unit);
+            }
+            for (const building of game.buildings) {
+                game.spatialHash.insert(building);
+            }
+        }
+
+        // ============================================
+        // Unit Movement
+        // ============================================
+        function updateUnitMovement(deltaTime) {
+            for (const unit of game.units) {
+                if (unit.state === 'moving' && unit.targetPos) {
+                    const dx = unit.targetPos.x - unit.x;
+                    const dy = unit.targetPos.y - unit.y;
+                    const dist = Math.hypot(dx, dy);
+
+                    if (dist < 2) {
+                        unit.state = 'idle';
+                        unit.targetPos = null;
+                    } else {
+                        const speed = CONFIG.MOVE_SPEED * deltaTime;
+                        const moveX = (dx / dist) * speed;
+                        const moveY = (dy / dist) * speed;
+
+                        // Check collision with walls
+                        let canMove = true;
+                        for (const building of game.buildings) {
+                            if (building.type === 'wall' && building.owner !== unit.owner) {
+                                if (Math.hypot(building.x - (unit.x + moveX), building.y - (unit.y + moveY)) < building.size + 3) {
+                                    canMove = false;
+                                    break;
+                                }
+                            }
+                        }
+
+                        if (canMove) {
+                            unit.x += moveX;
+                            unit.y += moveY;
+                        }
+                    }
+                } else if (unit.state === 'attacking' && unit.target) {
+                    // Move towards target if out of range
+                    const dist = Math.hypot(unit.target.x - unit.x, unit.target.y - unit.y);
+                    if (dist > CONFIG.ATTACK_RANGE) {
+                        const speed = CONFIG.MOVE_SPEED * deltaTime;
+                        unit.x += ((unit.target.x - unit.x) / dist) * speed;
+                        unit.y += ((unit.target.y - unit.y) / dist) * speed;
+                    }
+                }
+
+                // Keep units in bounds
+                unit.x = Math.max(5, Math.min(CONFIG.MAP_WIDTH - 5, unit.x));
+                unit.y = Math.max(5, Math.min(CONFIG.MAP_HEIGHT - 5, unit.y));
+            }
+        }
+
+        // ============================================
+        // Combat System
+        // ============================================
+        function resolveCombat(deltaTime) {
+            for (const unit of game.units) {
+                unit.attackCooldown -= deltaTime;
+
+                // Find enemies in range
+                const nearby = game.spatialHash.query(unit.x, unit.y, CONFIG.ATTACK_RANGE);
+                const enemies = nearby.filter(e =>
+                    e.owner !== unit.owner &&
+                    e.owner !== 0 &&
+                    e.health > 0
+                );
+
+                if (enemies.length > 0) {
+                    unit.state = 'attacking';
+
+                    // Attack if cooldown ready
+                    if (unit.attackCooldown <= 0) {
+                        // Target closest enemy
+                        let target = enemies[0];
+                        let minDist = Infinity;
+                        for (const e of enemies) {
+                            const d = Math.hypot(e.x - unit.x, e.y - unit.y);
+                            if (d < minDist) {
+                                minDist = d;
+                                target = e;
+                            }
+                        }
+
+                        // Calculate damage with bonuses
+                        let damage = CONFIG.ATTACK_DAMAGE * deltaTime;
+
+                        // Check defender bonuses
+                        if (isNearTower(target, target.owner)) {
+                            damage *= (1 - CONFIG.TOWER_DEFENSE_BONUS);
+                        }
+                        if (isBehindWall(target, unit)) {
+                            damage *= (1 - CONFIG.WALL_DEFENSE_BONUS);
+                        }
+
+                        // Apply damage
+                        target.health -= damage;
+
+                        if (target.health <= 0) {
+                            removeEntity(target);
+                        }
+
+                        unit.attackCooldown = 0.1;
+                    }
+                } else if (unit.state === 'attacking' && !unit.target) {
+                    unit.state = 'idle';
+                }
+            }
+
+            // Tower attacks
+            for (const tower of game.buildings.filter(b => b.type === 'tower')) {
+                const nearby = game.spatialHash.query(tower.x, tower.y, CONFIG.TOWER.range);
+                const enemies = nearby.filter(e =>
+                    e.owner !== tower.owner &&
+                    e.owner !== 0 &&
+                    e.health > 0 &&
+                    e.type === 'soldier'
+                );
+
+                if (enemies.length > 0) {
+                    const target = enemies[0];
+                    target.health -= CONFIG.TOWER.damage * deltaTime;
+
+                    if (target.health <= 0) {
+                        removeEntity(target);
+                    }
+                }
+            }
+        }
+
+        function isNearTower(entity, owner) {
+            return game.buildings.some(b =>
+                b.type === 'tower' &&
+                b.owner === owner &&
+                Math.hypot(b.x - entity.x, b.y - entity.y) < CONFIG.TOWER.auraRange
+            );
+        }
+
+        function isBehindWall(defender, attacker) {
+            // Simple check: is there a friendly wall between defender and attacker
+            const dx = attacker.x - defender.x;
+            const dy = attacker.y - defender.y;
+            const dist = Math.hypot(dx, dy);
+
+            for (const wall of game.buildings.filter(b => b.type === 'wall' && b.owner === defender.owner)) {
+                const wallDist = Math.hypot(wall.x - defender.x, wall.y - defender.y);
+                if (wallDist < dist && wallDist < 30) {
+                    // Check if wall is roughly between them
+                    const wallAngle = Math.atan2(wall.y - defender.y, wall.x - defender.x);
+                    const attackAngle = Math.atan2(dy, dx);
+                    if (Math.abs(wallAngle - attackAngle) < Math.PI / 4) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        function removeEntity(entity) {
+            if (entity.type === 'soldier') {
+                const index = game.units.indexOf(entity);
+                if (index > -1) {
+                    game.units.splice(index, 1);
+                    game.selectedUnits = game.selectedUnits.filter(u => u !== entity);
+                }
+            } else {
+                const index = game.buildings.indexOf(entity);
+                if (index > -1) {
+                    game.buildings.splice(index, 1);
+                    if (entity.type === 'tower') {
+                        updatePopCap();
+                    }
+                }
+            }
+        }
+
+        // ============================================
+        // Building Updates
+        // ============================================
+        function updateBuildings(deltaTime) {
+            const now = game.time * 1000;
+
+            for (const tower of game.buildings.filter(b => b.type === 'tower' && b.isComplete)) {
+                // Unit generation
+                if (tower.storedUnits < CONFIG.TOWER.maxStored) {
+                    if (now - tower.lastSpawn > CONFIG.TOWER.unitGenRate) {
+                        // Check if there's space to spawn
+                        const nearby = game.spatialHash.query(tower.x, tower.y, CONFIG.TOWER.spawnRadius);
+                        const friendlyUnits = nearby.filter(e => e.owner === tower.owner && e.type === 'soldier');
+
+                        if (friendlyUnits.length < 30) {
+                            // Spawn unit
+                            const angle = Math.random() * Math.PI * 2;
+                            const radius = 15 + Math.random() * CONFIG.TOWER.spawnRadius;
+                            createUnit(
+                                tower.x + Math.cos(angle) * radius,
+                                tower.y + Math.sin(angle) * radius,
+                                tower.owner
+                            );
+                            tower.lastSpawn = now;
+                        }
+                    }
+                }
+            }
+        }
+
+        // ============================================
+        // Territory System
+        // ============================================
+        function updateTerritoryOwnership() {
+            for (const territory of game.territories) {
+                const centerX = territory.x + CONFIG.TERRITORY_SIZE / 2;
+                const centerY = territory.y + CONFIG.TERRITORY_SIZE / 2;
+
+                // Count units in territory
+                const nearby = game.spatialHash.query(centerX, centerY, CONFIG.TERRITORY_SIZE);
+                const counts = { 1: 0, 2: 0 };
+
+                for (const entity of nearby) {
+                    if (entity.owner && entity.type === 'soldier') {
+                        counts[entity.owner]++;
+                    }
+                }
+
+                // Majority takes territory
+                if (counts[1] > counts[2] && counts[1] >= 3) {
+                    territory.owner = 1;
+                } else if (counts[2] > counts[1] && counts[2] >= 3) {
+                    territory.owner = 2;
+                }
+            }
+        }
+
+        // ============================================
+        // Economy System
+        // ============================================
+        let lastIncomeTime = 0;
+
+        function updateEconomy(deltaTime) {
+            const now = game.time * 1000;
+
+            if (now - lastIncomeTime > CONFIG.INCOME_INTERVAL) {
+                // Calculate territory income
+                for (const playerId in game.players) {
+                    const territories = game.territories.filter(t => t.owner == playerId);
+                    const income = territories.length * CONFIG.INCOME_PER_TERRITORY;
+                    game.players[playerId].pixels += income;
+                }
+
+                lastIncomeTime = now;
+                updateResourceDisplay();
+            }
+        }
+
+        function updatePopCap() {
+            for (const playerId in game.players) {
+                const towers = game.buildings.filter(b => b.type === 'tower' && b.owner == playerId);
+                const cap = CONFIG.BASE_POP_CAP + towers.length * CONFIG.POP_PER_TOWER;
+                // Pop cap display updated in UI
+            }
+        }
+
+        // ============================================
+        // AI System
+        // ============================================
+        let lastAIUpdate = 0;
+
+        function updateAI(deltaTime) {
+            const now = game.time * 1000;
+
+            if (now - lastAIUpdate > CONFIG.AI_UPDATE_INTERVAL) {
+                const aiPlayer = game.players[2];
+                const aiUnits = game.units.filter(u => u.owner === 2);
+                const playerUnits = game.units.filter(u => u.owner === 1);
+                const playerBuildings = game.buildings.filter(b => b.owner === 1);
+
+                if (aiUnits.length > 50) {
+                    // Attack if we have enough units
+                    let target = null;
+
+                    // Prioritize player units nearby
+                    if (playerUnits.length > 0) {
+                        target = playerUnits[Math.floor(Math.random() * playerUnits.length)];
+                    } else if (playerBuildings.length > 0) {
+                        target = playerBuildings[0];
+                    }
+
+                    if (target) {
+                        // Send half the units to attack
+                        const attackForce = aiUnits.slice(0, Math.floor(aiUnits.length / 2));
+                        for (const unit of attackForce) {
+                            unit.target = target;
+                            unit.state = 'attacking';
+                            unit.targetPos = { x: target.x, y: target.y };
+                        }
+                    }
+                }
+
+                // Build defenses if we have resources
+                if (aiPlayer.pixels >= CONFIG.TOWER.cost && game.buildings.filter(b => b.owner === 2 && b.type === 'tower').length < 5) {
+                    const baseX = CONFIG.MAP_WIDTH * 0.85;
+                    const baseY = CONFIG.MAP_HEIGHT * 0.5;
+                    const offset = (Math.random() - 0.5) * 200;
+
+                    aiPlayer.pixels -= CONFIG.TOWER.cost;
+                    createBuilding(baseX + offset, baseY + offset, 'tower', 2);
+                }
+
+                lastAIUpdate = now;
+            }
+        }
+
+        // ============================================
+        // Win Condition
+        // ============================================
+        function checkWinCondition() {
+            const p1Units = game.units.filter(u => u.owner === 1).length;
+            const p2Units = game.units.filter(u => u.owner === 2).length;
+            const p1Buildings = game.buildings.filter(b => b.owner === 1).length;
+            const p2Buildings = game.buildings.filter(b => b.owner === 2).length;
+
+            if (p1Units === 0 && p1Buildings === 0) {
+                endGame(false);
+            } else if (p2Units === 0 && p2Buildings === 0) {
+                endGame(true);
+            }
+        }
+
+        function endGame(playerWon) {
+            game.isGameOver = true;
+
+            const overlay = document.getElementById('game-overlay');
+            const title = document.getElementById('overlay-title');
+
+            if (playerWon) {
+                title.textContent = 'VITTORIA!';
+                title.className = 'overlay-title victory';
+            } else {
+                title.textContent = 'SCONFITTA';
+                title.className = 'overlay-title defeat';
+            }
+
+            overlay.style.display = 'flex';
+        }
+
+        function restartGame() {
+            // Reset game state
+            game.units = [];
+            game.buildings = [];
+            game.selectedUnits = [];
+            game.territories = [];
+            game.time = 0;
+            game.isGameOver = false;
+            game.nextUnitId = 1;
+            game.nextBuildingId = 1;
+
+            game.players[1].pixels = CONFIG.STARTING_PIXELS;
+            game.players[2].pixels = CONFIG.STARTING_PIXELS;
+
+            document.getElementById('game-overlay').style.display = 'none';
+
+            initTerritories();
+            spawnStartingUnits();
+            updateResourceDisplay();
+        }
+
+        // ============================================
+        // UI Updates
+        // ============================================
+        function updateUI() {
+            // Update time
+            const minutes = Math.floor(game.time / 60);
+            const seconds = Math.floor(game.time % 60);
+            document.getElementById('game-time').textContent =
+                `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        function updateResourceDisplay() {
+            const player = game.players[1];
+            document.getElementById('pixel-count').textContent = Math.floor(player.pixels);
+
+            const territories = game.territories.filter(t => t.owner === 1).length;
+            document.getElementById('territory-count').textContent = territories;
+
+            const units = game.units.filter(u => u.owner === 1).length;
+            document.getElementById('unit-count').textContent = units;
+
+            const towers = game.buildings.filter(b => b.type === 'tower' && b.owner === 1).length;
+            const popCap = CONFIG.BASE_POP_CAP + towers * CONFIG.POP_PER_TOWER;
+            document.getElementById('pop-cap').textContent = popCap;
+        }
+
+        // ============================================
+        // Rendering
+        // ============================================
+        function render() {
+            const ctx = game.ctx;
+            const cam = game.camera;
+
+            // Clear
+            ctx.fillStyle = '#0a0a15';
+            ctx.fillRect(0, 0, game.canvas.width, game.canvas.height);
+
+            ctx.save();
+            ctx.scale(cam.zoom, cam.zoom);
+            ctx.translate(-cam.x, -cam.y);
+
+            // Draw grid
+            drawGrid(ctx);
+
+            // Draw territories
+            drawTerritories(ctx);
+
+            // Draw tower auras
+            drawAuras(ctx);
+
+            // Draw buildings
+            for (const building of game.buildings) {
+                drawBuilding(ctx, building);
+            }
+
+            // Draw units
+            for (const unit of game.units) {
+                drawUnit(ctx, unit);
+            }
+
+            // Draw selection box
+            if (game.selectionBox) {
+                drawSelectionBox(ctx);
+            }
+
+            // Draw build preview
+            if (game.buildMode) {
+                drawBuildPreview(ctx);
+            }
+
+            ctx.restore();
+
+            // Update resource display
+            updateResourceDisplay();
+        }
+
+        function drawGrid(ctx) {
+            ctx.strokeStyle = '#1a1a2e';
+            ctx.lineWidth = 1;
+
+            const startX = Math.floor(game.camera.x / CONFIG.GRID_SIZE) * CONFIG.GRID_SIZE;
+            const startY = Math.floor(game.camera.y / CONFIG.GRID_SIZE) * CONFIG.GRID_SIZE;
+            const endX = game.camera.x + game.canvas.width / game.camera.zoom;
+            const endY = game.camera.y + game.canvas.height / game.camera.zoom;
+
+            for (let x = startX; x <= endX; x += CONFIG.GRID_SIZE) {
+                ctx.beginPath();
+                ctx.moveTo(x, game.camera.y);
+                ctx.lineTo(x, endY);
+                ctx.stroke();
+            }
+
+            for (let y = startY; y <= endY; y += CONFIG.GRID_SIZE) {
+                ctx.beginPath();
+                ctx.moveTo(game.camera.x, y);
+                ctx.lineTo(endX, y);
+                ctx.stroke();
+            }
+        }
+
+        function drawTerritories(ctx) {
+            for (const territory of game.territories) {
+                if (territory.owner !== 0) {
+                    const color = game.players[territory.owner].color;
+                    ctx.fillStyle = color + '20'; // Semi-transparent
+                    ctx.fillRect(territory.x, territory.y, CONFIG.TERRITORY_SIZE, CONFIG.TERRITORY_SIZE);
+                }
+            }
+        }
+
+        function drawAuras(ctx) {
+            for (const tower of game.buildings.filter(b => b.type === 'tower')) {
+                const color = game.players[tower.owner].color;
+
+                // Draw defense aura
+                ctx.beginPath();
+                ctx.arc(tower.x, tower.y, CONFIG.TOWER.auraRange, 0, Math.PI * 2);
+                ctx.fillStyle = color + '10';
+                ctx.fill();
+                ctx.strokeStyle = color + '30';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+
+                // Draw attack range
+                ctx.beginPath();
+                ctx.arc(tower.x, tower.y, CONFIG.TOWER.range, 0, Math.PI * 2);
+                ctx.strokeStyle = color + '20';
+                ctx.setLineDash([5, 5]);
+                ctx.stroke();
+                ctx.setLineDash([]);
+            }
+        }
+
+        function drawBuilding(ctx, building) {
+            const color = game.players[building.owner].color;
+
+            if (building.type === 'tower') {
+                // Tower body
+                ctx.fillStyle = color;
+                ctx.beginPath();
+                ctx.arc(building.x, building.y, building.size, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Tower inner
+                ctx.fillStyle = '#0a0a15';
+                ctx.beginPath();
+                ctx.arc(building.x, building.y, building.size * 0.6, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Health bar
+                const healthPct = building.health / building.maxHealth;
+                ctx.fillStyle = '#333';
+                ctx.fillRect(building.x - 15, building.y - building.size - 8, 30, 4);
+                ctx.fillStyle = healthPct > 0.5 ? '#4ade80' : healthPct > 0.25 ? '#fbbf24' : '#ef4444';
+                ctx.fillRect(building.x - 15, building.y - building.size - 8, 30 * healthPct, 4);
+            } else if (building.type === 'wall') {
+                ctx.fillStyle = color;
+                ctx.fillRect(
+                    building.x - building.size / 2,
+                    building.y - building.size / 2,
+                    building.size,
+                    building.size
+                );
+
+                // Darker outline
+                ctx.strokeStyle = '#000';
+                ctx.lineWidth = 1;
+                ctx.strokeRect(
+                    building.x - building.size / 2,
+                    building.y - building.size / 2,
+                    building.size,
+                    building.size
+                );
+            }
+        }
+
+        function drawUnit(ctx, unit) {
+            const color = game.players[unit.owner].color;
+            const isSelected = game.selectedUnits.includes(unit);
+
+            // Selection highlight
+            if (isSelected) {
+                ctx.fillStyle = '#fff';
+                ctx.beginPath();
+                ctx.arc(unit.x, unit.y, CONFIG.UNIT_SIZE + 2, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // Unit body
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.arc(unit.x, unit.y, CONFIG.UNIT_SIZE, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Health indicator (if damaged)
+            if (unit.health < unit.maxHealth) {
+                const healthPct = unit.health / unit.maxHealth;
+                ctx.fillStyle = healthPct > 0.5 ? '#4ade80' : '#ef4444';
+                ctx.beginPath();
+                ctx.arc(unit.x, unit.y - 6, 2, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // Defense bonus indicator
+            if (isNearTower(unit, unit.owner)) {
+                ctx.strokeStyle = '#60a5fa';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.arc(unit.x, unit.y, CONFIG.UNIT_SIZE + 1, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+        }
+
+        function drawSelectionBox(ctx) {
+            const box = game.selectionBox;
+            ctx.strokeStyle = '#4ade80';
+            ctx.lineWidth = 1;
+            ctx.fillStyle = 'rgba(74, 222, 128, 0.1)';
+
+            const x = Math.min(box.x1, box.x2);
+            const y = Math.min(box.y1, box.y2);
+            const w = Math.abs(box.x2 - box.x1);
+            const h = Math.abs(box.y2 - box.y1);
+
+            ctx.fillRect(x, y, w, h);
+            ctx.strokeRect(x, y, w, h);
+        }
+
+        function drawBuildPreview(ctx) {
+            const config = game.buildMode === 'tower' ? CONFIG.TOWER : CONFIG.WALL;
+            const canAfford = game.players[1].pixels >= config.cost;
+
+            ctx.globalAlpha = 0.5;
+            ctx.fillStyle = canAfford ? '#4ade80' : '#ef4444';
+
+            if (game.buildMode === 'tower') {
+                ctx.beginPath();
+                ctx.arc(mousePos.x, mousePos.y, config.size, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Show range preview
+                ctx.strokeStyle = '#4ade80';
+                ctx.setLineDash([5, 5]);
+                ctx.beginPath();
+                ctx.arc(mousePos.x, mousePos.y, CONFIG.TOWER.range, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.setLineDash([]);
+            } else {
+                ctx.fillRect(
+                    mousePos.x - config.size / 2,
+                    mousePos.y - config.size / 2,
+                    config.size,
+                    config.size
+                );
+            }
+
+            ctx.globalAlpha = 1;
+        }
+
+        // ============================================
+        // Minimap
+        // ============================================
+        function renderMinimap() {
+            const ctx = game.minimapCtx;
+            const w = game.minimap.width;
+            const h = game.minimap.height;
+
+            // Clear
+            ctx.fillStyle = '#0a0a15';
+            ctx.fillRect(0, 0, w, h);
+
+            const scaleX = w / CONFIG.MAP_WIDTH;
+            const scaleY = h / CONFIG.MAP_HEIGHT;
+
+            // Draw territories
+            for (const territory of game.territories) {
+                if (territory.owner !== 0) {
+                    ctx.fillStyle = game.players[territory.owner].color + '60';
+                    ctx.fillRect(
+                        territory.x * scaleX,
+                        territory.y * scaleY,
+                        CONFIG.TERRITORY_SIZE * scaleX,
+                        CONFIG.TERRITORY_SIZE * scaleY
+                    );
+                }
+            }
+
+            // Draw buildings
+            for (const building of game.buildings) {
+                ctx.fillStyle = game.players[building.owner].color;
+                const size = building.type === 'tower' ? 4 : 2;
+                ctx.fillRect(
+                    building.x * scaleX - size / 2,
+                    building.y * scaleY - size / 2,
+                    size,
+                    size
+                );
+            }
+
+            // Draw unit clusters (simplified)
+            const unitCounts = {};
+            for (const unit of game.units) {
+                const key = `${Math.floor(unit.x / 50)},${Math.floor(unit.y / 50)},${unit.owner}`;
+                unitCounts[key] = (unitCounts[key] || 0) + 1;
+            }
+
+            for (const key in unitCounts) {
+                const [x, y, owner] = key.split(',');
+                const count = unitCounts[key];
+                ctx.fillStyle = game.players[owner].color;
+                const size = Math.min(4, 1 + count / 10);
+                ctx.fillRect(
+                    x * 50 * scaleX,
+                    y * 50 * scaleY,
+                    size,
+                    size
+                );
+            }
+
+            // Draw camera viewport
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(
+                game.camera.x * scaleX,
+                game.camera.y * scaleY,
+                (game.canvas.width / game.camera.zoom) * scaleX,
+                (game.canvas.height / game.camera.zoom) * scaleY
+            );
+        }
+
+        // Start the game
+        window.onload = init;
+    </script>
+</body>
+</html>
