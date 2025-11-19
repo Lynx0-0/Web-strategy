@@ -575,6 +575,8 @@
                     <kbd>CTRL+1-9</kbd> Assegna gruppo<br>
                     <kbd>WASD/Frecce</kbd> Muovi camera<br>
                     <kbd>Rotella</kbd> Zoom<br>
+                    <kbd>Q</kbd> Costruisci muro<br>
+                    <kbd>E</kbd> Costruisci torre<br>
                     <kbd>ESC</kbd> Annulla
                 </div>
             </div>
@@ -983,6 +985,14 @@
                     game.selectedUnits = [];
                     updateSelectionInfo();
                 }
+            }
+
+            // Build shortcuts
+            if (e.key.toLowerCase() === 'q' && !e.ctrlKey) {
+                setBuildMode('wall');
+            }
+            if (e.key.toLowerCase() === 'e' && !e.ctrlKey) {
+                setBuildMode('tower');
             }
         }
 
