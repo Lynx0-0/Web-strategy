@@ -268,6 +268,57 @@
             background: #ff6b8a;
         }
 
+        /* Mobile quick build bar */
+        .mobile-build-bar {
+            display: none;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #16213e;
+            padding: 8px;
+            border-top: 2px solid #0f3460;
+            z-index: 45;
+            gap: 8px;
+            justify-content: center;
+        }
+
+        .mobile-build-btn {
+            flex: 1;
+            max-width: 150px;
+            padding: 10px 15px;
+            background: #0f3460;
+            border: 2px solid #1a4a7a;
+            color: #fff;
+            cursor: pointer;
+            border-radius: 5px;
+            text-align: center;
+            font-size: 14px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 3px;
+        }
+
+        .mobile-build-btn:hover, .mobile-build-btn:active {
+            background: #1a4a7a;
+            border-color: #e94560;
+        }
+
+        .mobile-build-btn.active {
+            background: #e94560;
+            border-color: #ff6b8a;
+        }
+
+        .mobile-build-btn .mobile-btn-icon {
+            font-size: 20px;
+        }
+
+        .mobile-build-btn .mobile-btn-cost {
+            font-size: 10px;
+            color: #ffd700;
+        }
+
         /* Responsive Design */
         @media (max-width: 1200px) {
             #sidebar {
@@ -336,10 +387,15 @@
                 display: block;
             }
 
+            .mobile-build-bar {
+                display: flex;
+            }
+
             #game-footer {
                 flex-direction: column;
                 gap: 5px;
                 padding: 5px 15px;
+                padding-bottom: 70px;
             }
 
             .game-time, .game-status, .selection-info {
@@ -533,6 +589,20 @@
         <div class="tooltip" id="tooltip"></div>
 
         <button class="sidebar-toggle" id="sidebar-toggle">☰</button>
+
+        <!-- Mobile build bar -->
+        <div class="mobile-build-bar" id="mobile-build-bar">
+            <button class="mobile-build-btn" id="mobile-btn-wall">
+                <span class="mobile-btn-icon">🧱</span>
+                <span>Muro</span>
+                <span class="mobile-btn-cost">10 px</span>
+            </button>
+            <button class="mobile-build-btn" id="mobile-btn-tower">
+                <span class="mobile-btn-icon">🗼</span>
+                <span>Torre</span>
+                <span class="mobile-btn-cost">50 px</span>
+            </button>
+        </div>
     </div>
 
     <div id="game-footer">
@@ -862,6 +932,10 @@
             // Build buttons
             document.getElementById('btn-wall').addEventListener('click', () => setBuildMode('wall'));
             document.getElementById('btn-tower').addEventListener('click', () => setBuildMode('tower'));
+
+            // Mobile build buttons
+            document.getElementById('mobile-btn-wall').addEventListener('click', () => setBuildMode('wall'));
+            document.getElementById('mobile-btn-tower').addEventListener('click', () => setBuildMode('tower'));
 
             // Sidebar toggle for mobile
             document.getElementById('sidebar-toggle').addEventListener('click', toggleSidebar);
@@ -1245,12 +1319,17 @@
         function setBuildMode(type) {
             game.buildMode = type;
 
-            // Update UI
+            // Update sidebar UI
             document.querySelectorAll('.build-btn').forEach(btn => btn.classList.remove('active'));
+            // Update mobile UI
+            document.querySelectorAll('.mobile-build-btn').forEach(btn => btn.classList.remove('active'));
+
             if (type === 'wall') {
                 document.getElementById('btn-wall').classList.add('active');
+                document.getElementById('mobile-btn-wall').classList.add('active');
             } else if (type === 'tower') {
                 document.getElementById('btn-tower').classList.add('active');
+                document.getElementById('mobile-btn-tower').classList.add('active');
             }
         }
 
